@@ -116,7 +116,7 @@ func queryServer(path string) ([]byte, error) {
 }
 
 func searchByPincode(pinCode string) error {
-	response, err := queryServer(fmt.Sprintf(calendarByPinURLFormat, pinCode, timeNow()))
+	response, err := queryServer(fmt.Sprintf(calendarByPinURLFormat, pinCode, date))
 	if err != nil {
 		return errors.Wrap(err, "Failed to fetch appointment sessions")
 	}
@@ -173,7 +173,7 @@ func searchByStateDistrict(age int, state, district string) error {
 			return err1
 		}
 	}
-	response, err := queryServer(fmt.Sprintf(calendarByDistrictURLFormat, districtID, timeNow()))
+	response, err := queryServer(fmt.Sprintf(calendarByDistrictURLFormat, districtID, date))
 	if err != nil {
 		return errors.Wrap(err, "Failed to fetch appointment sessions")
 	}
