@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -84,6 +85,8 @@ func checkFlags() error {
 	}
 	if !(vaccine == "" || vaccine == covishield || vaccine == covaxin) {
 		return errors.New("Invalid vaccine, please use covaxin or covishield")
+	} else {
+		vaccine = strings.ToUpper(vaccine)
 	}
 	if !(fee == "" || fee == free || fee == paid) {
 		return errors.New("Invalid fee preference, please use free or paid")

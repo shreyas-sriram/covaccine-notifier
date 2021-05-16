@@ -17,8 +17,8 @@ import (
 // https://apisetu.gov.in/public/api/cowin
 const (
 	baseURL                     = "https://cdn-api.co-vin.in/api"
-	calendarByPinURLFormat      = "/v2/appointment/sessions/calendarByPin?pincode=%s&date=%s"
-	calendarByDistrictURLFormat = "/v2/appointment/sessions/calendarByDistrict?district_id=%d&date=%s"
+	calendarByPinURLFormat      = "/v2/appointment/sessions/calendarByPin?pincode=%s&date=%s&vaccine=%s"
+	calendarByDistrictURLFormat = "/v2/appointment/sessions/calendarByDistrict?district_id=%d&date=%s&vaccine=%s"
 	listStatesURLFormat         = "/v2/admin/location/states"
 	listDistrictsURLFormat      = "/v2/admin/location/districts/%d"
 )
@@ -116,7 +116,7 @@ func queryServer(path string) ([]byte, error) {
 }
 
 func searchByPincode(pinCode string) error {
-	response, err := queryServer(fmt.Sprintf(calendarByPinURLFormat, pinCode, date))
+	response, err := queryServer(fmt.Sprintf(calendarByPinURLFormat, pinCode, date, vaccine))
 	if err != nil {
 		return errors.Wrap(err, "Failed to fetch appointment sessions")
 	}
@@ -173,7 +173,7 @@ func searchByStateDistrict(age int, state, district string) error {
 			return err1
 		}
 	}
-	response, err := queryServer(fmt.Sprintf(calendarByDistrictURLFormat, districtID, date))
+	response, err := queryServer(fmt.Sprintf(calendarByDistrictURLFormat, districtID, date, vaccine))
 	if err != nil {
 		return errors.Wrap(err, "Failed to fetch appointment sessions")
 	}
@@ -206,7 +206,7 @@ func getAvailableSessions(response []byte, age int) error {
 			continue
 		}
 		for _, s := range center.Sessions {
-			if s.MinAgeLimit <= age && s.AvailableCapacity != 0 && isPreferredAvailable(s.Vaccine, vaccine) {
+			if s.MinAgeLimit <= age && s.AvailableCapacity != 0 {
 				fmt.Fprintln(w, fmt.Sprintf("Center\t%s", center.Name))
 				fmt.Fprintln(w, fmt.Sprintf("State\t%s", center.StateName))
 				fmt.Fprintln(w, fmt.Sprintf("District\t%s", center.DistrictName))
