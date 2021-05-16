@@ -35,6 +35,7 @@ const (
 	searchIntervalEnv = "SEARCH_INTERVAL"
 	vaccineEnv        = "VACCINE"
 	feeEnv            = "FEE"
+	dateEnv           = "DATE"
 
 	defaultSearchInterval = 60
 
@@ -53,8 +54,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&email, "email", "e", os.Getenv(emailIDEnv), "Email address to send notifications")
 	rootCmd.PersistentFlags().StringVarP(&password, "password", "p", os.Getenv(emailPasswordEnv), "Email ID password for auth")
 	rootCmd.PersistentFlags().IntVarP(&interval, "interval", "i", getIntEnv(searchIntervalEnv), fmt.Sprintf("Interval to repeat the search. Default: (%v) second", defaultSearchInterval))
-	rootCmd.PersistentFlags().StringVarP(&vaccine, "vaccine", "v", os.Getenv(vaccineEnv), fmt.Sprintf("Vaccine preferences - covishield (or) covaxin. Default: No preference"))
-	rootCmd.PersistentFlags().StringVarP(&fee, "fee", "f", os.Getenv(feeEnv), fmt.Sprintf("Fee preferences - free (or) paid. Default: No preference"))
+	rootCmd.PersistentFlags().StringVarP(&vaccine, "vaccine", "v", os.Getenv(vaccineEnv), "Vaccine preferences - covishield (or) covaxin. Default: No preference")
+	rootCmd.PersistentFlags().StringVarP(&fee, "fee", "f", os.Getenv(feeEnv), "Fee preferences - free (or) paid. Default: No preference")
+	rootCmd.PersistentFlags().StringVarP(&date, "date", "D", os.Getenv(dateEnv), "Appointment date to check from (DD-MM-YYYY). Default: Today")
 }
 
 // Execute executes the main command
@@ -85,6 +87,13 @@ func checkFlags() error {
 	}
 	if !(fee == "" || fee == free || fee == paid) {
 		return errors.New("Invalid fee preference, please use free or paid")
+	}
+	if len(date) != 0 {
+		if _, err := time.Parse("02-01-2006", date); err != nil {
+			errors.New("Appointment date must be of the format DD-MM-YYYY")
+		}
+	} else {
+		date = timeNow()
 	}
 	return nil
 }
@@ -122,7 +131,6 @@ func Run(args []string) error {
 			}
 		}
 	}
-	return nil
 }
 
 func checkSlots() error {

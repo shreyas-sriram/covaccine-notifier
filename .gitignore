@@ -16,3 +16,6 @@
 
 #Intellij Idea
 .idea
+
+covaccine-notifier
+**/*.json
