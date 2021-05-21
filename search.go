@@ -67,15 +67,19 @@ type Appointments struct {
 			Vaccine string `json:"vaccine"`
 			Fee     string `json:"fee"`
 		} `json:"vaccine_fees"`
-		Sessions []struct {
-			SessionID         string   `json:"session_id"`
-			Date              string   `json:"date"`
-			AvailableCapacity float64  `json:"available_capacity"`
-			MinAgeLimit       int      `json:"min_age_limit"`
-			Vaccine           string   `json:"vaccine"`
-			Slots             []string `json:"slots"`
-		} `json:"sessions"`
+		Sessions []Sessions `json:"sessions"`
 	} `json:"centers"`
+}
+
+type Sessions struct {
+	SessionID              string   `json:"session_id"`
+	Date                   string   `json:"date"`
+	AvailableCapacity      int      `json:"available_capacity"`
+	MinAgeLimit            int      `json:"min_age_limit"`
+	Vaccine                string   `json:"vaccine"`
+	Slots                  []string `json:"slots"`
+	AvailableCapacityDose1 int      `json:"available_capacity_dose1"`
+	AvailableCapacityDose2 int      `json:"available_capacity_dose2"`
 }
 
 func timeNow() string {
@@ -133,7 +137,7 @@ func getStateIDByName(state string) (int, error) {
 		return 0, err
 	}
 	for _, s := range states.States {
-		if strings.ToLower(s.StateName) == strings.ToLower(state) {
+		if strings.EqualFold(s.StateName, state) {
 			log.Printf("State Details - ID: %d, Name: %s", s.StateID, s.StateName)
 			return s.StateID, nil
 		}
@@ -151,7 +155,7 @@ func getDistrictIDByName(stateID int, district string) (int, error) {
 		return 0, err
 	}
 	for _, d := range dl.Districts {
-		if strings.ToLower(d.DistrictName) == strings.ToLower(district) {
+		if strings.EqualFold(d.DistrictName, district) {
 			log.Printf("District Details - ID: %d, Name: %s", d.DistrictID, d.DistrictName)
 			return d.DistrictID, nil
 		}
@@ -185,7 +189,16 @@ func isPreferredAvailable(current, preference string) bool {
 	if preference == "" {
 		return true
 	} else {
-		return strings.ToLower(current) == preference
+		return strings.EqualFold(current, preference)
+	}
+}
+
+// isDoseAvailable checks for availability of required dose and quantity
+func isDoseAvailable(current Sessions, quantity, dose int) bool {
+	if dose == 1 {
+		return current.AvailableCapacityDose1 >= quantity
+	} else {
+		return current.AvailableCapacityDose2 >= quantity
 	}
 }
 
@@ -194,19 +207,19 @@ func getAvailableSessions(response []byte, age int) error {
 		log.Printf("Received unexpected response, rechecking after %v seconds", interval)
 		return nil
 	}
-	appnts := Appointments{}
-	err := json.Unmarshal(response, &appnts)
+	appointments := Appointments{}
+	err := json.Unmarshal(response, &appointments)
 	if err != nil {
 		return err
 	}
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 1, 8, 1, '\t', 0)
-	for _, center := range appnts.Centers {
+	for _, center := range appointments.Centers {
 		if !isPreferredAvailable(center.FeeType, fee) {
 			continue
 		}
 		for _, s := range center.Sessions {
-			if s.MinAgeLimit <= age && s.AvailableCapacity != 0 && isPreferredAvailable(s.Vaccine, vaccine) {
+			if s.MinAgeLimit <= age && isDoseAvailable(s, quantity, dose) && isPreferredAvailable(s.Vaccine, vaccine) {
 				fmt.Fprintln(w, fmt.Sprintf("Center\t%s", center.Name))
 				fmt.Fprintln(w, fmt.Sprintf("State\t%s", center.StateName))
 				fmt.Fprintln(w, fmt.Sprintf("District\t%s", center.DistrictName))
@@ -221,7 +234,9 @@ func getAvailableSessions(response []byte, age int) error {
 				}
 				fmt.Fprintln(w, fmt.Sprintf("Sessions\t"))
 				fmt.Fprintln(w, fmt.Sprintf("\tDate\t%s", s.Date))
-				fmt.Fprintln(w, fmt.Sprintf("\tAvailableCapacity\t%f", s.AvailableCapacity))
+				fmt.Fprintln(w, fmt.Sprintf("\tAvailableCapacity\t%d", s.AvailableCapacity))
+				fmt.Fprintln(w, fmt.Sprintf("\tAvailableCapacityDose1\t%d", s.AvailableCapacityDose1))
+				fmt.Fprintln(w, fmt.Sprintf("\tAvailableCapacityDose2\t%d", s.AvailableCapacityDose2))
 				fmt.Fprintln(w, fmt.Sprintf("\tMinAgeLimit\t%d", s.MinAgeLimit))
 				fmt.Fprintln(w, fmt.Sprintf("\tVaccine\t%s", s.Vaccine))
 				fmt.Fprintln(w, fmt.Sprintf("\tSlots"))
@@ -240,5 +255,6 @@ func getAvailableSessions(response []byte, age int) error {
 		return nil
 	}
 	log.Print("Found available slots, sending email")
+	// log.Print(buf.String())
 	return sendMail(email, password, buf.String())
 }
