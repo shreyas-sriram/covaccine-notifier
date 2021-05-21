@@ -14,7 +14,7 @@ import (
 var (
 	pinCode, state, district, email, password, date, vaccine, fee string
 
-	age, interval int
+	age, interval, dose, quantity int
 
 	rootCmd = &cobra.Command{
 		Use:   "covaccine-notifier [FLAGS]",
@@ -36,8 +36,12 @@ const (
 	vaccineEnv        = "VACCINE"
 	feeEnv            = "FEE"
 	dateEnv           = "DATE"
+	doseEnv           = "DOSE"
+	quantityEnv       = "QUANTITY"
 
-	defaultSearchInterval = 60
+	defaultSearchInterval  = 60
+	defaultDose            = 1
+	defaultMinimumQuantity = 1
 
 	covishield = "covishield"
 	covaxin    = "covaxin"
@@ -56,7 +60,9 @@ func init() {
 	rootCmd.PersistentFlags().IntVarP(&interval, "interval", "i", getIntEnv(searchIntervalEnv), fmt.Sprintf("Interval to repeat the search. Default: (%v) second", defaultSearchInterval))
 	rootCmd.PersistentFlags().StringVarP(&vaccine, "vaccine", "v", os.Getenv(vaccineEnv), "Vaccine preferences - covishield (or) covaxin. Default: No preference")
 	rootCmd.PersistentFlags().StringVarP(&fee, "fee", "f", os.Getenv(feeEnv), "Fee preferences - free (or) paid. Default: No preference")
-	rootCmd.PersistentFlags().StringVarP(&date, "date", "D", os.Getenv(dateEnv), "Appointment date to check from (DD-MM-YYYY). Default: Today")
+	rootCmd.PersistentFlags().StringVar(&date, "date", os.Getenv(dateEnv), "Appointment date to check from (DD-MM-YYYY). Default: Today")
+	rootCmd.PersistentFlags().IntVar(&dose, "dose", getIntEnv(doseEnv), "Dose number - 1 (or) 2. Default: 1")
+	rootCmd.PersistentFlags().IntVarP(&quantity, "quantity", "q", getIntEnv(quantityEnv), "Minimum number of vaccines - 1 (to) 5. Default: 1")
 }
 
 // Execute executes the main command
@@ -94,6 +100,18 @@ func checkFlags() error {
 		}
 	} else {
 		date = timeNow()
+	}
+	if dose == 0 {
+		dose = defaultDose
+	}
+	if !(dose == 1 || dose == 2) {
+		return errors.New("Invalid dose option, please use 1 or 2")
+	}
+	if quantity == 0 {
+		quantity = defaultMinimumQuantity
+	}
+	if quantity < defaultMinimumQuantity || quantity > 5 {
+		return errors.New("Invalid quantity option, please enter value between 0-5")
 	}
 	return nil
 }
