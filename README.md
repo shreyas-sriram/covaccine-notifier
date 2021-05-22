@@ -34,13 +34,16 @@ Usage:
 
 Flags:
   -a, --age int           Search appointment for age
+      --date string       Appointment date to check from (DD-MM-YYYY). Default: Today
   -d, --district string   Search by district name
+      --dose int          Dose number - 1 (or) 2. Default: 1
   -e, --email string      Email address to send notifications
   -f, --fee string        Fee preferences - free (or) paid. Default: No preference
   -h, --help              help for covaccine-notifier
   -i, --interval int      Interval to repeat the search. Default: (60) second
   -p, --password string   Email ID password for auth
   -c, --pincode string    Search by pin code
+  -q, --quantity int      Minimum number of vaccines - 1 (to) 5. Default: 1
   -s, --state string      Search by state name
   -v, --vaccine string    Vaccine preferences - covishield (or) covaxin. Default: No preference
 
@@ -76,6 +79,18 @@ If you are not willing to keep your terminal on all the time :smile:, you can al
 
 ```
 kubectl run covaccine-notifier --image=ghcr.io/prasadg193/covaccine-notifier:v0.2.0 --command -- /covaccine-notifier --state Maharashtra --district Akola --age 27  --email <email-id> --password <email-password>
+```
+
+### New search options
+
+Search by:
+- vaccine
+- date
+- dose number
+- minimum vaccine quantity
+
+```
+covaccine-notifier --state Maharashtra --district Akola --age 27  --email <email-id> --password <email-password> --interval 120 --vaccine covaxin --date 24-05-2021 --dose 2 --quantity 3
 ```
 
 ## Contributing
