@@ -109,13 +109,12 @@ func queryServer(path string) ([]byte, error) {
 	}
 	log.Print("Response: ", string(bodyBytes))
 
+	// If API response is anything but "OK", do not fail in that case
 	if resp.StatusCode != http.StatusOK {
-		// Sometimes the API returns "Unauthenticated access!", do not fail in that case
-		if resp.StatusCode == http.StatusUnauthorized {
-			return nil, nil
-		}
-		return nil, errors.New(fmt.Sprintf("Request failed with statusCode: %d", resp.StatusCode))
+		log.Printf("Request failed with statusCode: %d", resp.StatusCode)
+		return nil, nil
 	}
+
 	return bodyBytes, nil
 }
 
